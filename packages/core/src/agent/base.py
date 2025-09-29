@@ -1,19 +1,34 @@
-from typing import Any, List
-
-from langchain.agents import AgentExecutor
-
-
+from typing import Dict, Any, List
+from langchain.agents import AgentExecutor, Tool
+from langchain_core.language_models import BaseLanguageModel
 
 class AIAgent(AgentExecutor):
-    def __init__(self, tools, llm, memory, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self.memory = memory  # 记忆系统
-        self.llm = llm  # 语言模型
-        self.tools = tools  # 工具集
+    def __init__(
+        self,
+        llm: BaseLanguageModel,
+        tools: List[Tool],
+        memory: 'BaseMemory',
+        agent_type: str = "openai-tools"
+    ):
+        self.llm = llm
+        self.tools = tools
+        self.memory = memory
+        self.agent_type = agent_type
+        super().__init__(
+            tools=tools,
+            llm=llm,
+            memory=memory,
+            agent_type=agent_type
+        )
 
-    def add_memory(self, key: str, value: Any):
-        """自定义记忆管理"""
-        self.memory.save_context({key: value})
+    def add_custom_tool(self, tool: Tool):
+        """动态添加工具"""
+        self.tools.append(tool)
 
-
-
+    def run_pipeline(self, input_text: str) -> Dict[str, Any]:
+        """执行完整处理流程"""
+        return {
+            "input": input_text,
+            "output": self.run(input_text),
+            "memory": self.memory.load_memory_variables({})
+        }

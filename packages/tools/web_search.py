@@ -1,11 +1,15 @@
-# 工具基类 (tools/base.py)
-from langchain.tools import BaseTool
-
+import requests
+from .base import BaseTool, ToolInput
 
 class WebSearchTool(BaseTool):
     name = "web_search"
-    description = "Search the web for current information"
+    description = "使用Google搜索获取最新信息"
 
-    def _run(self, query: str) -> str:
-        from serpapi import GoogleSearch
-        # 实现搜索逻辑...
+    def execute(self, input: ToolInput) -> str:
+        params = {
+            "q": input.input,
+            "api_key": "YOUR_API_KEY",
+            "num": 3
+        }
+        response = requests.get("https://serpapi.com/search", params=params)
+        return str(response.json()["organic_results"][:3])

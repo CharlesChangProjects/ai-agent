@@ -1,10 +1,34 @@
-from typing import Any, List
-from langchain_core.documents import Document
+from abc import ABC, abstractmethod
+from typing import Dict, Any
 
-class VectorMemory:
+from langchain.schema import Document
+
+
+class BaseMemory(ABC):
+    @abstractmethod
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]):
+        pass
+
+    @abstractmethod
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        pass
+
+
+class VectorMemory(BaseMemory):
     def __init__(self, vectorstore):
-        self.store = vectorstore
+        self.vectorstore = vectorstore
+        self.buffer = []
 
-    def retrieve(self, query: str) -> List[Document]:
-        """基于向量检索的记忆召回"""
-        return self.store.similarity_search(query)
+    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]):
+        """保存交互记录到向量库"""
+        text = f"Input: {inputs}\nOutput: {outputs}"
+        self.buffer.append(Document(page_content=text))
+        if len(self.buffer) > 10:  # 批量插入
+            self.vectorstore.add_documents(self.buffer)
+            self.buffer = []
+
+    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+        """检索相关记忆"""
+        query = inputs.get("input", "")
+        docs = self.vectorstore.similarity_search(query, k=3)
+        return {"history": [doc.page_content for doc in docs]}
