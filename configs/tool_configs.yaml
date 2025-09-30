@@ -1,0 +1,8 @@
+web_search:
+  api_key: ${SERPAPI_KEY}
+  max_results: 3
+  timeout: 10
+
+arxiv:
+  max_results: 5
+  sort_by: "relevance"
